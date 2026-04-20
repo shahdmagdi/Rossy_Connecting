@@ -1,0 +1,34 @@
+# Virtual environment
+venv/
+
+# Environment variables — NEVER push this
+.env
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Flask-Migrate (optional, some people push this)
+# migrations/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
+
+ml_model/
+*.keras
+*.h5
+*.pt
+breast_cancer_resnet50/
+
+supabase.tar.gz
+supabase/.temp/
+backup.sql
+node_modules

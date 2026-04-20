@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/static/css/main.517c3e9c.css",
+    "main.js": "/static/js/main.07942f92.js",
+    "static/js/442.be649bf6.chunk.js": "/static/js/442.be649bf6.chunk.js",
+    "static/media/RSlogo2.png": "/static/media/RSlogo2.38219b2645d983e3dc99.png",
+    "index.html": "/index.html",
+    "main.517c3e9c.css.map": "/static/css/main.517c3e9c.css.map",
+    "main.07942f92.js.map": "/static/js/main.07942f92.js.map",
+    "442.be649bf6.chunk.js.map": "/static/js/442.be649bf6.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.517c3e9c.css",
+    "static/js/main.07942f92.js"
+  ]
+}
