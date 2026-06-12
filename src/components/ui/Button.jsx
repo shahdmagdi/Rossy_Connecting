@@ -7,11 +7,12 @@ const Button = ({
   variant = 'primary', 
   disabled = false,
   className = '',
+  style = {},
   ...props 
 }) => {
   const baseStyles = {
     padding: '12px 24px',
-    borderRadius: '8px',
+    borderRadius: '22px',
     fontSize: '16px',
     fontWeight: '600',
     cursor: disabled ? 'not-allowed' : 'pointer',
@@ -36,14 +37,15 @@ const Button = ({
       border: '2px solid #DB2777',
     },
     danger: {
-      backgroundColor: '#BE185D',
-      color: '#ffffff',
+      backgroundColor: '#ede7ea',
+      color: '#f90505',
     },
   };
 
   const buttonStyle = {
     ...baseStyles,
     ...variants[variant],
+    ...style,
   };
 
   return (

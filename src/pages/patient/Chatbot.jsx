@@ -1,159 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
+import API from '../../services/api';  // adjust path if Chatbot.jsx lives elsewhere
 
-const ruleBasedResponses = {
-  greeting: {
-    keywords: ['hello', 'hi', 'hey', 'good morning', 'good afternoon', 'good evening', 'start', 'help'],
-    responses: [
-      "Hello! I'm Rossy Resilience Health Assistant. How can I help you today?",
-      "Hi there! I'm here to help with any health-related questions you might have.",
-      "Hello! Feel free to ask me about breast cancer, symptoms, prevention, or how to use this website."
-    ]
-  },
-  website: {
-    keywords: ['website', 'use', 'how do i', 'how to', 'app', 'platform', 'navigate', 'login', 'pages', 'navigation', 'dashboard'],
-    responses: [
-      "This website has 5 main pages: 🏠 Home/Dashboard - Shows your health overview and upcoming visits; 📅 Visits - View and manage your appointments; 👨‍⚕️ Doctor - Connect with your healthcare providers; 📋 History - View your medical records and past visits; 📝 Care Plan - Access your personalized treatment plan. Use the top navigation menu to switch between pages.",
-      "The navigation is simple! At the top you'll see: Dashboard (your health summary), Visits (schedule appointments), Doctor (contact your medical team), History (past medical records), and Care Plan (your treatment details). Click any option to navigate to that page.",
-      "To use this website: 1) Dashboard - See your health overview and upcoming visits. 2) Visits - Schedule or view appointments with your doctors. 3) Doctor - Find and contact your healthcare providers. 4) History - Browse your complete medical history. 5) Care Plan - Follow your personalized treatment schedule and medications. The chatbot is available on all pages to help you!"
-    ]
-  },
-  breastCancer: {
-    keywords: ['breast cancer', 'what is', 'about', 'explain', 'cancer', 'tumor'],
-    responses: [
-      "Breast cancer is a type of cancer that develops in the breast tissue. It occurs when cells in the breast grow abnormally and uncontrollably, forming a tumor. Early detection through regular screenings significantly improves treatment outcomes.",
-      "Breast cancer is one of the most common cancers affecting women. It can affect anyone, regardless of age or family history. Regular self-exams and mammograms are key to early detection.",
-      "Breast cancer develops when cells in the breast mutate and grow abnormally. While it can be hereditary, many cases occur in women without family history. Treatment options include surgery, chemotherapy, radiation, and targeted therapy."
-    ]
-  },
-  symptoms: {
-    keywords: ['symptom', 'signs', 'warning', 'detect', 'find', 'lump', 'pain', 'discharge'],
-    responses: [
-      "Common signs of breast cancer include: a new lump in the breast or underarm area, changes in breast size or shape, skin irritation or dimpling, nipple discharge, or pain in the breast area. However, some cases show no symptoms initially.",
-      "Watch for these warning signs: a lump or thickening in the breast, changes in how the breast or nipple looks, any discharge from the nipple, or persistent pain. Remember, these symptoms can also be caused by non-cancerous conditions.",
-      "Breast cancer symptoms to be aware of: new lumps, changes in breast shape or size, skin changes (redness or dimpling), nipple changes, or unusual discharge. Regular screenings can detect changes before you notice symptoms."
-    ]
-  },
-  prevention: {
-    keywords: ['prevent', 'prevention', 'reduce risk', 'avoid', 'stop', 'lower risk', 'protect'],
-    responses: [
-      "To reduce breast cancer risk: Maintain a healthy weight, exercise regularly, limit alcohol, avoid smoking, and discuss genetic testing with your doctor if you have family history.",
-      "Prevention strategies include: regular exercise, maintaining a healthy weight, limiting alcohol consumption, breastfeeding if possible, and discussing screening schedules with your healthcare provider.",
-      "While there's no guaranteed prevention, you can lower your risk through lifestyle changes: stay active, eat a balanced diet, limit alcohol, and attend regular screenings as recommended by your doctor."
-    ]
-  },
-  screening: {
-    keywords: ['screening', 'mammogram', 'exam', 'check', 'scan', 'detect', 'test', 'early'],
-    responses: [
-      "Mammograms are X-ray examinations of the breast that can detect cancer early, often before lumps can be felt. Women aged 40+ should discuss screening schedules with their doctor.",
-      "Regular mammograms can detect breast cancer years before symptoms appear. The recommended frequency depends on your age and risk factors. Talk to your healthcare provider about what's right for you.",
-      "Breast screening typically involves mammograms starting at age 40, though your doctor may recommend earlier screening based on your risk factors. Self-exams monthly and clinical exams yearly are also recommended."
-    ]
-  },
-  treatment: {
-    keywords: ['treatment', 'therapy', 'cure', 'chemo', 'radiation', 'surgery', 'medicine', 'doctor'],
-    responses: [
-      "Treatment options for breast cancer include surgery (lumpectomy or mastectomy), chemotherapy, radiation therapy, hormone therapy, and targeted therapy. Your oncologist will recommend the best approach for your specific case.",
-      "Breast cancer treatment is personalized based on cancer type and stage. Common treatments include surgery to remove tumors, chemotherapy, radiation, and targeted therapies. Recent advances have significantly improved outcomes.",
-      "Modern breast cancer treatments are highly effective. Options include surgery, chemotherapy, radiation, and advanced targeted therapies. Your medical team will create a personalized treatment plan based on your specific diagnosis."
-    ]
-  },
-  risk: {
-    keywords: ['risk', 'risk factor', 'chance', 'likelihood', 'who get', 'who gets', 'family', 'hereditary'],
-    responses: [
-      "Risk factors for breast cancer include: age (risk increases with age), family history, genetic mutations (BRCA1/BRCA2), early menstruation, late menopause, and certain lifestyle factors.",
-      "While breast cancer risk increases with age and family history, most cases occur in women without known risk factors. Being aware of your family history and discussing it with your doctor is important.",
-      "Key risk factors include age, family history, genetic factors (like BRCA genes), reproductive history, and lifestyle factors. Having risk factors doesn't mean you'll develop cancer, and many diagnosed patients have no known risk factors."
-    ]
-  },
-  mentalHealth: {
-    keywords: ['stress', 'anxiety', 'depression', 'mental', 'emotional', 'scared', 'worried', 'fear', 'cope'],
-    responses: [
-      "It's completely normal to feel anxious or stressed after a breast cancer diagnosis. Consider talking to a mental health professional, joining a support group, practicing relaxation techniques, or speaking with loved ones about your feelings.",
-      "Managing emotional health is important during your cancer journey. Practice self-care, stay connected with supportive people, consider counseling, and remember that it's okay to feel overwhelmed sometimes.",
-      "Emotional support is crucial. Don't hesitate to seek professional help if you're feeling anxious or depressed. Many hospitals offer support groups and counseling services for cancer patients and survivors."
-    ]
-  },
-  survival: {
-    keywords: ['survival', 'survivor', 'outcome', 'prognosis', 'stage', 'stage 1', 'stage 2', 'stage 3', 'stage 4'],
-    responses: [
-      "Breast cancer survival rates have improved significantly with modern treatments. Early detection leads to the best outcomes. Survival rates vary by cancer stage, with early-stage cancers having over 90% five-year survival rates.",
-      "Today, many women survive breast cancer thanks to early detection and improved treatments. Survival rates are highest when cancer is caught early. Your medical team will discuss your specific prognosis.",
-      "Breast cancer is highly treatable, especially when detected early. Modern treatments have significantly improved survival rates. The five-year survival rate for localized breast cancer is over 99%."
-    ]
-  },
-  support: {
-    keywords: ['support', 'help', 'resources', ' groups', 'donate', 'charity', 'organization'],
-    responses: [
-      "For support, consider Rossy Resilience Foundation which provides resources for breast cancer patients. You can also contact your healthcare team for local support groups and counseling services.",
-      "We're here to help! Connect with your healthcare team for resources, ask questions through this chatbot, or explore organizations like the American Cancer Society for additional support.",
-      "Your healthcare provider can connect you with support groups, counseling services, and financial assistance programs. Many communities also have local breast cancer support organizations."
-    ]
-  },
-  appointment: {
-    keywords: ['appointment', 'visit', 'schedule', 'book', 'doctor', 'clinic', 'hospital', 'upcoming'],
-    responses: [
-      "You can schedule or view your appointments through the dashboard. Go to the Visits section to see upcoming appointments or book new ones with your healthcare provider.",
-      "To manage your appointments, visit the Appointments page in your patient dashboard. You can view upcoming visits, reschedule, or book new appointments with your care team.",
-      "Your appointment information is available in the Visits section of your patient dashboard. Contact your healthcare provider's office directly for scheduling changes or urgent appointments."
-    ]
-  },
-  carePlan: {
-    keywords: ['care plan', 'treatment plan', 'plan', 'schedule', 'medication', 'medicine', 'drug'],
-    responses: [
-      "Your personalized care plan is available in the Care Plan section of your patient dashboard. It outlines your treatment schedule, medications, and follow-up care instructions.",
-      "You can view your complete care plan in the Care Plan section. This includes your treatment schedule, medications, appointment reminders, and other important care instructions from your medical team.",
-      "Your care plan is accessible through your patient dashboard. It contains all your treatment details, medication schedules, and follow-up care information tailored to your specific diagnosis."
-    ]
-  },
-  history: {
-    keywords: ['history', 'medical history', 'record', 'records', 'past', 'previous'],
-    responses: [
-      "You can view your medical history, including past visits and treatments, in the History section of your patient dashboard.",
-      "Your complete medical history is available in the patient dashboard's History section. This includes all your recorded visits, diagnoses, and treatment information.",
-      "Access your health records through the History section. Your medical history, including previous visits and treatments, is stored securely and available for your review."
-    ]
-  },
-  contact: {
-    keywords: ['contact', 'reach', 'talk', 'speak', 'call', 'phone', 'email', 'message'],
-    responses: [
-      "You can contact your healthcare team through the patient portal or by calling your clinic directly. For urgent matters, please call your clinic's emergency line.",
-      "To reach your healthcare team, use the patient portal messaging system or call your clinic directly. If this is an emergency, please call 911 or go to the nearest emergency room.",
-      "You can message your doctor through the patient portal or call your clinic. For immediate medical concerns, contact emergency services or visit your nearest emergency room."
-    ]
-  },
-  default: {
-    keywords: [],
-    responses: [
-      "I'm here to help with general health questions. You can ask me about breast cancer symptoms, prevention, treatment, or how to use this website.",
-      "I understand you have a question. I can help with information about breast cancer, symptoms, prevention, screening, and using this platform.",
-      "For specific medical advice, please consult your healthcare provider. I'm happy to answer general questions about breast cancer or help you navigate this website."
-    ]
-  }
-};
-
-const getRuleBasedResponse = (userMessage) => {
-  const lowerMessage = userMessage.toLowerCase();
-  
-  for (const [category, data] of Object.entries(ruleBasedResponses)) {
-    if (category === 'default') continue;
-    
-    const hasKeyword = data.keywords.some(keyword => lowerMessage.includes(keyword));
-    if (hasKeyword) {
-      const randomIndex = Math.floor(Math.random() * data.responses.length);
-      return { 
-        response: data.responses[randomIndex], 
-        hasDisclaimer: true 
-      };
-    }
-  }
-  
-  const defaultResponses = ruleBasedResponses.default.responses;
-  const randomIndex = Math.floor(Math.random() * defaultResponses.length);
-  return { 
-    response: defaultResponses[randomIndex], 
-    hasDisclaimer: true 
-  };
-};
+const CHATBOT = '/chatbot';
 
 const Chatbot = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -163,10 +11,33 @@ const Chatbot = () => {
   const [inputText, setInputText] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showDisclaimer, setShowDisclaimer] = useState(false);
+  const [sessionId, setSessionId] = useState(null);
+  const [sessionError, setSessionError] = useState(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Floating button styles
+  // ── Session management ─────────────────────────────────
+  const createSession = async () => {
+    try {
+      const res = await API.post(`${CHATBOT}/session`);
+      setSessionId(res.data.session_id);
+      setSessionError(null);
+      return res.data.session_id;
+    } catch (err) {
+      console.error('Failed to create session:', err);
+      setSessionError('Could not connect to the server. Please try again later.');
+      return null;
+    }
+  };
+
+  // Create session when chat opens for the first time
+  useEffect(() => {
+    if (isOpen && !sessionId) {
+      createSession();
+    }
+  }, [isOpen]);
+
+  // ── Floating button styles ─────────────────────────────
   const floatingButtonStyle = {
     position: 'fixed',
     bottom: '30px',
@@ -185,7 +56,6 @@ const Chatbot = () => {
     transition: 'transform 0.3s, box-shadow 0.3s',
   };
 
-  // Chat window styles
   const chatWindowStyle = {
     position: 'fixed',
     bottom: '120px',
@@ -210,19 +80,16 @@ const Chatbot = () => {
     }
   };
 
-  // Auto scroll to bottom when new messages arrive
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
-  // Focus input when chat opens
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
     }
   }, [isOpen]);
 
-  // Header styles
   const headerStyle = {
     backgroundColor: '#831843',
     color: '#ffffff',
@@ -233,7 +100,6 @@ const Chatbot = () => {
     justifyContent: 'space-between',
   };
 
-  // Messages container styles
   const messagesContainerStyle = {
     flex: 1,
     overflowY: 'auto',
@@ -244,7 +110,6 @@ const Chatbot = () => {
     backgroundColor: '#FDF2F8',
   };
 
-  // Chat bubble styles
   const userBubbleStyle = {
     maxWidth: '75%',
     padding: '12px 16px',
@@ -268,9 +133,9 @@ const Chatbot = () => {
     color: '#333',
     boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
     wordWrap: 'break-word',
+    whiteSpace: 'pre-wrap',
   };
 
-  // Typing indicator styles
   const typingIndicatorStyle = {
     display: 'flex',
     gap: '4px',
@@ -282,7 +147,6 @@ const Chatbot = () => {
     width: 'fit-content',
   };
 
-  // Input area styles
   const inputAreaStyle = {
     padding: '16px',
     borderTop: '1px solid #F3F4F6',
@@ -313,7 +177,6 @@ const Chatbot = () => {
     transition: 'background-color 0.3s',
   };
 
-  // Disclaimer banner styles
   const disclaimerStyle = {
     backgroundColor: '#FEF3C7',
     border: '1px solid #F59E0B',
@@ -325,7 +188,6 @@ const Chatbot = () => {
     textAlign: 'center',
   };
 
-  // Suggestion chips styles
   const suggestionContainerStyle = {
     display: 'flex',
     gap: '8px',
@@ -345,36 +207,53 @@ const Chatbot = () => {
     transition: 'background-color 0.2s',
   };
 
-  const handleSend = () => {
+  // ── Send message ───────────────────────────────────────
+  const handleSend = async () => {
     if (!inputText.trim() || isLoading) return;
 
     const userMessage = inputText.trim();
-    const newUserMessage = { 
-      id: Date.now(), 
-      text: userMessage, 
-      sender: 'user' 
-    };
-    
-    setMessages(prev => [...prev, newUserMessage]);
+    setMessages(prev => [...prev, { id: Date.now(), text: userMessage, sender: 'user' }]);
     setInputText('');
     setIsLoading(true);
 
-    setTimeout(() => {
-      const { response, hasDisclaimer } = getRuleBasedResponse(userMessage);
-      
-      const botMessage = {
-        id: Date.now() + 1,
-        text: response,
-        sender: 'bot',
-        hasDisclaimer: hasDisclaimer
-      };
-      setMessages(prev => [...prev, botMessage]);
-      
-      if (hasDisclaimer) {
-        setShowDisclaimer(true);
+    try {
+      // Ensure we have a session
+      let currentSessionId = sessionId;
+      if (!currentSessionId) {
+        currentSessionId = await createSession();
+        if (!currentSessionId) {
+          throw new Error('No session available');
+        }
       }
+
+      const res = await API.post(`${CHATBOT}/message`, {
+        session_id: currentSessionId,
+        message: userMessage,
+      }, { timeout: 120000 }); // 2 min — RAG pipeline needs time
+
+      if (!res.data.success) throw new Error(res.data.message || 'Request failed');
+
+      const answer = res.data.assistant_message?.content || 'Sorry, I could not get a response.';
+
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: answer,
+        sender: 'bot',
+        hasDisclaimer: true,
+      }]);
+      setShowDisclaimer(true);
+
+    } catch (err) {
+      console.error('Chat error:', err);
+      const msg = err.response?.data?.message || err.message || 'Something went wrong. Please try again.';
+      setMessages(prev => [...prev, {
+        id: Date.now() + 1,
+        text: `⚠️ ${msg}`,
+        sender: 'bot',
+      }]);
+    } finally {
       setIsLoading(false);
-    }, 500);
+    }
   };
 
   const handleSuggestionClick = (suggestion) => {
@@ -382,7 +261,7 @@ const Chatbot = () => {
     inputRef.current?.focus();
   };
 
-  // Chat icon SVG (robot/health assistant icon)
+  // ── Icons ──────────────────────────────────────────────
   const chatIcon = (
     <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
       <rect x="3" y="11" width="18" height="10" rx="2" />
@@ -395,7 +274,6 @@ const Chatbot = () => {
     </svg>
   );
 
-  // Close icon SVG
   const closeIcon = (
     <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2">
       <line x1="18" y1="6" x2="6" y2="18" />
@@ -403,7 +281,6 @@ const Chatbot = () => {
     </svg>
   );
 
-  // Send icon SVG
   const sendIcon = (
     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
       <line x1="22" y1="2" x2="11" y2="13" />
@@ -411,7 +288,6 @@ const Chatbot = () => {
     </svg>
   );
 
-  // Typing dots component
   const TypingIndicator = () => (
     <div style={typingIndicatorStyle}>
       <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: '#831843', animation: 'bounce 1s infinite' }} />
@@ -420,7 +296,6 @@ const Chatbot = () => {
     </div>
   );
 
-  // Suggestions for initial view
   const suggestions = [
     "How do I use this website?",
     "What is breast cancer?",
@@ -449,8 +324,8 @@ const Chatbot = () => {
         `}
       </style>
 
-      <button 
-        style={floatingButtonStyle} 
+      <button
+        style={floatingButtonStyle}
         className="chat-float-btn"
         onClick={toggleChat}
         aria-label={isOpen ? "Close chat" : "Open chat"}
@@ -462,10 +337,10 @@ const Chatbot = () => {
         <div style={chatWindowStyle}>
           <div style={headerStyle}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div style={{ 
-                width: '36px', 
-                height: '36px', 
-                borderRadius: '50%', 
+              <div style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
                 backgroundColor: 'rgba(255,255,255,0.2)',
                 display: 'flex',
                 alignItems: 'center',
@@ -475,22 +350,54 @@ const Chatbot = () => {
               </div>
               <div>
                 <div style={{ fontWeight: '600', fontSize: '16px' }}>Health Assistant</div>
-                <div style={{ fontSize: '12px', opacity: 0.9 }}>Rossy Resilience</div>
+                <div style={{ fontSize: '12px', opacity: 0.9 }}>
+                  {sessionId ? 'Rossy Resilience' : sessionError ? '⚠️ Offline' : 'Connecting...'}
+                </div>
               </div>
             </div>
           </div>
 
           <div style={messagesContainerStyle}>
+            {/* Session error banner */}
+            {sessionError && (
+              <div style={{
+                backgroundColor: '#FEE2E2',
+                border: '1px solid #F87171',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                fontSize: '12px',
+                color: '#991B1B',
+                textAlign: 'center',
+              }}>
+                ⚠️ {sessionError}
+                <button
+                  onClick={createSession}
+                  style={{
+                    marginLeft: '8px',
+                    background: 'none',
+                    border: 'none',
+                    color: '#831843',
+                    cursor: 'pointer',
+                    fontWeight: '600',
+                    textDecoration: 'underline',
+                    fontSize: '12px',
+                  }}
+                >
+                  Retry
+                </button>
+              </div>
+            )}
+
             {messages.map((msg) => (
-              <div 
-                key={msg.id} 
+              <div
+                key={msg.id}
                 style={msg.sender === 'user' ? userBubbleStyle : botBubbleStyle}
               >
                 {msg.text}
                 {msg.hasDisclaimer && (
-                  <div style={{ 
-                    marginTop: '10px', 
-                    paddingTop: '10px', 
+                  <div style={{
+                    marginTop: '10px',
+                    paddingTop: '10px',
                     borderTop: '1px solid #E5E7EB',
                     fontSize: '11px',
                     color: '#92400E',
@@ -501,11 +408,9 @@ const Chatbot = () => {
                 )}
               </div>
             ))}
-            
-            {/* Typing indicator */}
+
             {isLoading && <TypingIndicator />}
-            
-            {/* Show suggestions on first message if only bot message */}
+
             {messages.length === 1 && (
               <div style={suggestionContainerStyle}>
                 {suggestions.map((suggestion, index) => (
@@ -520,38 +425,36 @@ const Chatbot = () => {
                 ))}
               </div>
             )}
-            
+
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Medical Disclaimer */}
           {showDisclaimer && (
             <div style={disclaimerStyle}>
               ⚠️ <strong>Medical Disclaimer:</strong> This chatbot provides general health information and is not a substitute for professional medical advice. Always consult with a qualified healthcare provider for medical concerns.
             </div>
           )}
 
-          {/* Input area */}
           <div style={inputAreaStyle}>
             <input
               ref={inputRef}
               type="text"
-              placeholder="Type your message..."
+              placeholder={sessionId ? "Type your message..." : "Connecting to server..."}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyPress={(e) => e.key === 'Enter' && handleSend()}
               style={inputStyle}
-              disabled={isLoading}
+              disabled={isLoading || !!sessionError}
             />
             <button
               className="send-btn"
               style={{
                 ...sendButtonStyle,
-                opacity: isLoading ? 0.6 : 1,
-                cursor: isLoading ? 'not-allowed' : 'pointer'
+                opacity: (isLoading || !inputText.trim() || !!sessionError) ? 0.6 : 1,
+                cursor: (isLoading || !inputText.trim() || !!sessionError) ? 'not-allowed' : 'pointer',
               }}
               onClick={handleSend}
-              disabled={isLoading || !inputText.trim()}
+              disabled={isLoading || !inputText.trim() || !!sessionError}
             >
               {isLoading ? '...' : sendIcon}
             </button>

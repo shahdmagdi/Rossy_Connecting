@@ -1,181 +1,245 @@
-import React from 'react';
+import React, { useState, useEffect } from "react";
+import { getMyCarePlans } from "../../services/Notesservice";
 
 const CarePlan = () => {
-  const containerStyle = {
-    padding: '40px',
-    maxWidth: '1200px',
-    margin: '0 auto',
+  const [plans, setPlans] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    const load = async () => {
+      setLoading(true);
+      setError("");
+      try {
+        const res = await getMyCarePlans();
+        if (res.success) {
+          setPlans(res.notes || res.care_plans || res.data || []);
+        } else {
+          setError(res.message || "Failed to load care plans.");
+        }
+      } catch (e) {
+        setError(e?.response?.data?.message || "Failed to load care plans.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    load();
+  }, []);
+
+  // ── Styles ──────────────────────────────────────────────
+  const s = {
+    container: { padding: "40px", maxWidth: "1200px", margin: "0 auto" },
+    title: { fontSize: 28, fontWeight: 700, color: "#831843", marginBottom: 30 },
+    card: {
+      backgroundColor: "#fff",
+      borderRadius: 16,
+      padding: 25,
+      marginBottom: 20,
+      boxShadow: "0 4px 15px rgba(131,24,67,.1)",
+    },
+    sectionTitle: {
+      fontSize: 18,
+      fontWeight: 600,
+      color: "#831843",
+      marginBottom: 15,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+    },
   };
 
-  const titleStyle = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#831843',
-    marginBottom: '30px',
-  };
+  // ── Loading ──────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div style={s.container}>
+        <h1 style={s.title}>My Care Plan</h1>
+        {[1, 2, 3].map((i) => (
+          <div
+            key={i}
+            style={{
+              ...s.card,
+              height: 120,
+              backgroundImage:
+                "linear-gradient(90deg,#fdf2f8 25%,#fce7f3 50%,#fdf2f8 75%)",
+              backgroundSize: "200% 100%",
+              animation: "shimmer 1.4s infinite",
+            }}
+          />
+        ))}
+        <style>{`@keyframes shimmer{0%{background-position:200% 0}100%{background-position:-200% 0}}`}</style>
+      </div>
+    );
+  }
 
-  const cardStyle = {
-    backgroundColor: '#ffffff',
-    borderRadius: '16px',
-    padding: '25px',
-    marginBottom: '20px',
-    boxShadow: '0 4px 15px rgba(131, 24, 67, 0.1)',
-  };
+  // ── Error ────────────────────────────────────────────────
+  if (error) {
+    return (
+      <div style={s.container}>
+        <h1 style={s.title}>My Care Plan</h1>
+        <div
+          style={{
+            background: "#fee2e2",
+            border: "1px solid #fca5a5",
+            borderRadius: 12,
+            padding: "14px 18px",
+            color: "#991b1b",
+            fontSize: 14,
+          }}
+        >
+          ⚠️ {error}
+        </div>
+      </div>
+    );
+  }
 
-  const sectionTitleStyle = {
-    fontSize: '18px',
-    fontWeight: '600',
-    color: '#831843',
-    marginBottom: '15px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-  };
+  // ── Empty ────────────────────────────────────────────────
+  if (plans.length === 0) {
+    return (
+      <div style={s.container}>
+        <h1 style={s.title}>My Care Plan</h1>
+        <div style={{ ...s.card, textAlign: "center", padding: "60px 20px", color: "#94a3b8" }}>
+          <div style={{ fontSize: 48, marginBottom: 12 }}>📋</div>
+          <p style={{ fontSize: 15, fontWeight: 600, color: "#64748b", marginBottom: 6 }}>
+            No care plans yet
+          </p>
+          <p style={{ fontSize: 13 }}>
+            Your doctor hasn't shared any care plans with you yet.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
-  const itemStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    padding: '12px 0',
-    borderBottom: '1px solid #F3F4F6',
-  };
+  // ── Plans list ───────────────────────────────────────────
+  return (
+    <div style={s.container}>
+      <h1 style={s.title}>My Care Plan</h1>
 
-  const checkboxStyle = {
-    width: '20px',
-    height: '20px',
-    marginRight: '15px',
-    accentColor: '#831843',
-  };
+      {/* Count badge */}
+      <div style={{ marginBottom: 20 }}>
+        <span
+          style={{
+            fontSize: 12,
+            fontWeight: 700,
+            backgroundColor: "#fce7f3",
+            color: "#831843",
+            padding: "3px 14px",
+            borderRadius: 99,
+          }}
+        >
+          {plans.length} care plan{plans.length !== 1 ? "s" : ""}
+        </span>
+      </div>
 
-  const itemTextStyle = {
-    flex: 1,
-    fontSize: '14px',
-    color: '#333',
-  };
+      {plans.map((plan) => (
+        <PlanCard key={plan.id} plan={plan} />
+      ))}
+    </div>
+  );
+};
 
-  const timeStyle = {
-    fontSize: '12px',
-    color: '#666',
-    backgroundColor: '#FCE7F3',
-    padding: '4px 10px',
-    borderRadius: '15px',
-  };
+// ─── Individual plan card ─────────────────────────────────
 
-  const progressContainerStyle = {
-    marginBottom: '20px',
-  };
+const fmt = (iso) =>
+  iso
+    ? new Date(iso).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
 
-  const progressLabelStyle = {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: '8px',
-    fontSize: '14px',
-    color: '#666',
-  };
-
-  const progressBarStyle = {
-    height: '10px',
-    backgroundColor: '#F3F4F6',
-    borderRadius: '10px',
-    overflow: 'hidden',
-  };
-
-  const progressFillStyle = {
-    height: '100%',
-    width: '65%',
-    backgroundColor: '#831843',
-    borderRadius: '10px',
-  };
+const PlanCard = ({ plan }) => {
+  const [expanded, setExpanded] = useState(false);
 
   return (
-    <div style={containerStyle}>
-      <h1 style={titleStyle}>My Care Plan</h1>
+    <div
+      style={{
+        backgroundColor: "#fff",
+        borderRadius: 16,
+        marginBottom: 20,
+        boxShadow: "0 4px 15px rgba(131,24,67,.1)",
+        border: expanded ? "1.5px solid #f9a8d4" : "1.5px solid transparent",
+        overflow: "hidden",
+        transition: "border-color .2s",
+      }}
+    >
+      {/* Header — always visible */}
+      <div
+        onClick={() => setExpanded((p) => !p)}
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 14,
+          padding: "20px 25px",
+          cursor: "pointer",
+          userSelect: "none",
+        }}
+      >
+        <div
+          style={{
+            width: 44,
+            height: 44,
+            borderRadius: 12,
+            background: "linear-gradient(135deg,#fce7f3,#fbcfe8)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 20,
+            flexShrink: 0,
+          }}
+        >
+          📋
+        </div>
 
-      {/* Progress Overview */}
-      <div style={cardStyle}>
-        <div style={progressContainerStyle}>
-          <div style={progressLabelStyle}>
-            <span>Overall Progress</span>
-            <span style={{ color: '#831843', fontWeight: '600' }}>65%</span>
+        <div style={{ flex: 1, minWidth: 0 }}>
+          <div
+            style={{
+              fontSize: 16,
+              fontWeight: 700,
+              color: "#831843",
+              marginBottom: 4,
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              whiteSpace: "nowrap",
+            }}
+          >
+            {plan.title}
           </div>
-          <div style={progressBarStyle}>
-            <div style={progressFillStyle}></div>
+          <div style={{ fontSize: 12, color: "#9ca3af" }}>
+            From your doctor · {fmt(plan.created_at)}
           </div>
         </div>
+
+        <span
+          style={{
+            fontSize: 14,
+            color: "#9ca3af",
+            flexShrink: 0,
+            transform: expanded ? "rotate(180deg)" : "none",
+            transition: "transform .2s",
+          }}
+        >
+          ▾
+        </span>
       </div>
 
-      {/* Daily Medications */}
-      <div style={cardStyle}>
-        <div style={sectionTitleStyle}>💊 Daily Medications</div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} defaultChecked />
-          <span style={itemTextStyle}>Lisinopril 10mg - Morning</span>
-          <span style={timeStyle}>8:00 AM</span>
+      {/* Expanded content */}
+      {expanded && (
+        <div
+          style={{
+            borderTop: "1px solid #fce7f3",
+            padding: "20px 25px",
+            fontSize: 14,
+            color: "#374151",
+            lineHeight: 1.8,
+            whiteSpace: "pre-wrap",
+            backgroundColor: "#fffbfd",
+          }}
+        >
+          {plan.content}
         </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} defaultChecked />
-          <span style={itemTextStyle}>Metformin 500mg - With breakfast</span>
-          <span style={timeStyle}>8:00 AM</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Metformin 500mg - With dinner</span>
-          <span style={timeStyle}>7:00 PM</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Aspirin 81mg - Evening</span>
-          <span style={timeStyle}>9:00 PM</span>
-        </div>
-      </div>
-
-      {/* Lifestyle Changes */}
-      <div style={cardStyle}>
-        <div style={sectionTitleStyle}>🏃 Lifestyle & Exercise</div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Morning walk - 30 minutes</span>
-          <span style={timeStyle}>7:00 AM</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Exercise session - 45 minutes</span>
-          <span style={timeStyle}>6:00 PM</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Drink 8 glasses of water</span>
-          <span style={timeStyle}>Daily</span>
-        </div>
-      </div>
-
-      {/* Follow-up Tasks */}
-      <div style={cardStyle}>
-        <div style={sectionTitleStyle}>📅 Follow-up Tasks</div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Blood pressure check</span>
-          <span style={timeStyle}>Weekly</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Blood sugar monitoring</span>
-          <span style={timeStyle}>Daily</span>
-        </div>
-        <div style={itemStyle}>
-          <input type="checkbox" style={checkboxStyle} />
-          <span style={itemTextStyle}>Weight check-in</span>
-          <span style={timeStyle}>Weekly</span>
-        </div>
-      </div>
-
-      {/* Upcoming Appointments */}
-      <div style={cardStyle}>
-        <div style={sectionTitleStyle}>👨‍⚕️ Next Appointments</div>
-        <div style={{ fontSize: '14px', color: '#333', padding: '10px 0' }}>
-          <div>📅 March 20, 2026 - Dr. Sarah Johnson (General Checkup)</div>
-          <div style={{ marginTop: '10px' }}>📅 March 25, 2026 - Dr. Michael Chen (Cardiology)</div>
-        </div>
-      </div>
+      )}
     </div>
   );
 };

@@ -85,14 +85,14 @@ const EmailVerification = () => {
           return;
         }
 
-        // patients get logged in immediately
-        if (response.user) login(response.user);
-
-        if (response.user?.role === 'admin') {
-          navigate('/admin/dashboard');
-        } else {
-          navigate('/patient/dashboard');
-        }
+        /// admins get logged in immediately
+if (response.user?.role === 'admin') {
+  if (response.user) login(response.user);
+  navigate('/admin/dashboard');
+} else {
+  // patients must go through login so consent page appears
+  navigate('/login');
+}
 
       } else {
         setErrors({ code: response.message || 'Invalid verification code' });

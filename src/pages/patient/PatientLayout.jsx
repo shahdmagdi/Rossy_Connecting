@@ -3,17 +3,20 @@ import { Link, useLocation, Outlet } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 import logo from '../../assets/images/RSlogo2.png';
 import Chatbot from './Chatbot';
+import { useNavigate } from "react-router-dom";
 
 const PatientLayout = () => {
   const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const navItems = [
-    { name: 'Home', path: '/patient/dashboard', icon: '🏠' },
-    { name: 'Visits', path: '/patient/visits', icon: '📅' },
-    { name: 'Doctor', path: '/patient/doctor', icon: '👨‍⚕️' },
-    { name: 'History', path: '/patient/history', icon: '📋' },
+    { name: 'Home',      path: '/patient/dashboard', icon: '🏠' },
+    { name: 'Visits',    path: '/patient/visits',    icon: '📅' },
+    { name: 'Doctor',    path: '/patient/doctor',    icon: '👨‍⚕️' },
+    { name: 'Requests',  path: '/patient/requests',  icon: '📨' },
+    { name: 'History',   path: '/patient/history',   icon: '📋' },
     { name: 'Care Plan', path: '/patient/care-plan', icon: '📝' },
   ];
 
@@ -94,38 +97,26 @@ const PatientLayout = () => {
     transition: 'background-color 0.3s',
   };
 
-  const mobileMenuButtonStyle = {
-    background: 'none',
-    border: 'none',
-    color: '#ffffff',
-    fontSize: '24px',
-    cursor: 'pointer',
-    display: 'none',
-  };
-
   const mainContentStyle = {
     paddingTop: '80px',
     minHeight: '100vh',
     backgroundColor: '#FCE7F3',
   };
 
-  // Check if we're on a patient page
   const isPatientPage = location.pathname.startsWith('/patient');
-
-  if (!isPatientPage) {
-    return <Outlet />;
-  }
+  if (!isPatientPage) return <Outlet />;
 
   return (
     <>
-      {/* Header with Navigation */}
       <header style={headerStyle}>
+
+        {/* Logo */}
         <div style={logoContainerStyle}>
           <img src={logo} alt="Rossy Resilience" style={logoImageStyle} />
           <span style={logoTextStyle}>Rossy Resilience</span>
         </div>
 
-        {/* Desktop Navigation */}
+        {/* Nav Links */}
         <nav style={navStyle}>
           {navItems.map((item) => (
             <Link
@@ -133,14 +124,12 @@ const PatientLayout = () => {
               to={item.path}
               style={navLinkStyle(location.pathname === item.path)}
               onMouseOver={(e) => {
-                if (location.pathname !== item.path) {
+                if (location.pathname !== item.path)
                   e.target.style.backgroundColor = 'rgba(255,255,255,0.2)';
-                }
               }}
               onMouseOut={(e) => {
-                if (location.pathname !== item.path) {
+                if (location.pathname !== item.path)
                   e.target.style.backgroundColor = 'transparent';
-                }
               }}
             >
               <span>{item.icon}</span>
@@ -149,36 +138,60 @@ const PatientLayout = () => {
           ))}
         </nav>
 
-        {/* User Info & Logout */}
+        {/* User Info + Logout + Delete */}
         <div style={userInfoStyle}>
           <span style={userNameStyle}>
             {user?.name || 'Patient'}
           </span>
-          <button
-            style={logoutButtonStyle}
-            onClick={logout}
-            onMouseOver={(e) => e.target.style.backgroundColor = '#BE185D'}
-            onMouseOut={(e) => e.target.style.backgroundColor = '#DB2777'}
-          >
-            Logout
-          </button>
+
+          <div style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+
+            {/* Logout */}
+            <button
+              style={logoutButtonStyle}
+              onClick={logout}
+              onMouseOver={(e) => e.target.style.backgroundColor = '#BE185D'}
+              onMouseOut={(e) => e.target.style.backgroundColor = '#DB2777'}
+            >
+              Logout
+            </button>
+
+            {/* Delete Account — round trash icon */}
+            <button
+              onClick={() => navigate('/delete-account')}
+              title="Delete Account"
+              style={{
+                width: '36px',
+                height: '36px',
+                borderRadius: '50%',
+                backgroundColor: '#DB2777',
+                border: 'none',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                transition: 'background-color 0.3s',
+              }}
+              onMouseOver={(e) => e.currentTarget.style.backgroundColor = '#BE185D'}
+              onMouseOut={(e) => e.currentTarget.style.backgroundColor = '#DB2777'}
+            >
+              <svg width="16" height="16" fill="none" viewBox="0 0 24 24"
+                stroke="#ffffff" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round"
+                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+              </svg>
+            </button>
+
+          </div>
         </div>
 
-        {/* Mobile Menu Button */}
-        <button
-          style={{ ...mobileMenuButtonStyle, display: 'none' }}
-          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-        >
-          ☰
-        </button>
       </header>
 
-      {/* Main Content */}
       <main style={mainContentStyle}>
         <Outlet />
       </main>
 
-      {/* Floating Chatbot */}
       <Chatbot />
     </>
   );

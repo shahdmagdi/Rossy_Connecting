@@ -7,12 +7,12 @@ import Button from '../../components/ui/Button';
 import logo from '../../assets/images/RSlogo2.png';
 
 const Login = () => {
-  const [email, setEmail]       = useState('');
-  const [password, setPassword] = useState('');
-  const [errors, setErrors]     = useState({});
+  const [email, setEmail]         = useState('');
+  const [password, setPassword]   = useState('');
+  const [errors, setErrors]       = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
-  const navigate = useNavigate();
+  const { login }                 = useAuth();
+  const navigate                  = useNavigate();
 
   const validateForm = () => {
     const newErrors = {};
@@ -38,42 +38,66 @@ const Login = () => {
     setErrors({});
 
     try {
-      // Call authService directly with email and password strings
       const response = await authService.login(email, password);
 
+      // ── Consent required (patient hasn't accepted T&C yet) ──
+      // Backend returns success: false + consent_required: true + temp_token
+      if (response.consent_required) {
+        navigate('/consent', {
+          state: {
+            temp_token: response.temp_token,
+            user:       response.user,
+          },
+        });
+        return;
+      }
+
+      // ── Normal successful login ──
       if (response.success) {
-        // Store user in AuthContext
         login(response.user);
 
-        const role = response.user?.role;
-        const emailVerified = response.user?.email_verified;
-
-        if (!emailVerified) {
-          navigate('/verify-email', { state: { email, role } });
-          return;
-        }
-
-        if (role === 'doctor' && response.user?.verification_status !== 'verified') {
-          navigate('/pending-approval');
-          return;
-        }
+        const role    = response.user?.role;
+        const vs      = response.user?.verification_status;
 
         if (role === 'doctor') {
-          navigate('/doctor/dashboard');
-        } else if (role === 'admin') {
+          if (vs === 'verified') {
+            navigate('/doctor/dashboard');
+          } else {
+            navigate('/pending-approval');
+          }
+          return;
+        }
+
+        if (role === 'admin') {
           navigate('/admin/dashboard');
         } else {
           navigate('/patient/dashboard');
         }
+
       } else {
         setErrors({ general: response.message || 'Invalid email or password' });
       }
+
     } catch (error) {
+      // authService throws on non-2xx, but login returns 403 with consent_required
+      // so we need to check the error's response data too
+      const errData = error?.responseData;
+      if (errData?.consent_required) {
+        navigate('/consent', {
+          state: {
+            temp_token: errData.temp_token,
+            user:       errData.user,
+          },
+        });
+        return;
+      }
       setErrors({ general: error.message || 'Login failed. Please try again.' });
     } finally {
       setIsLoading(false);
     }
   };
+
+  // ── Styles (unchanged from your original) ─────────────
 
   const containerStyle = {
     minHeight: '100vh',

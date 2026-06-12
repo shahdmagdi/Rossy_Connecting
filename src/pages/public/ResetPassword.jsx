@@ -1,285 +1,79 @@
-import React, { useState } from 'react';
-import { useNavigate, useLocation, Link } from 'react-router-dom';
-import Input from '../../components/ui/Input';
-import Button from '../../components/ui/Button';
-import logo from '../../assets/images/RSlogo2.png';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import Input from "../../components/ui/Input";
+import Button from "../../components/ui/Button";
+import authService from "../../services/authService";
 
 const ResetPassword = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  
-  // Get token from URL query params
-  const searchParams = new URLSearchParams(location.search);
-  const token = searchParams.get('token');
-  
-  const [formData, setFormData] = useState({
-    password: '',
-    confirmPassword: '',
-  });
-  const [errors, setErrors] = useState({});
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
 
-  const validateForm = () => {
-    const newErrors = {};
-    
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-    } else if (!/(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/.test(formData.password)) {
-      newErrors.password = 'Password must contain uppercase, lowercase, and number';
-    }
-    
-    if (!formData.confirmPassword) {
-      newErrors.confirmPassword = 'Please confirm your password';
-    } else if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords do not match';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
+  const [form, setForm] = useState({
+    code: "",
+    new_password: "",
+    confirm_password: "",
+  });
+
+  const [loading, setLoading] = useState(false);
+  const [resendLoading, setResendLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState(false);
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    setForm({ ...form, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!validateForm()) {
+
+    if (!form.code || !form.new_password || !form.confirm_password) {
+      setError("All fields are required");
       return;
     }
 
-    if (!token) {
-      setErrors({ general: 'Invalid reset token. Please request a new password reset.' });
+    if (form.new_password !== form.confirm_password) {
+      setError("Passwords do not match");
       return;
     }
-
-    setIsLoading(true);
-    setErrors({});
 
     try {
-      // Import authService for actual API call
-      const { default: authService } = await import('../../services/authService');
-      
-      try {
-        const response = await authService.resetPassword(token, formData.password);
-        
-        if (response.success) {
-          setIsSuccess(true);
-        }
-      } catch (apiError) {
-        console.log('Mock: Password reset successful');
-        setIsSuccess(true);
-      }
-    } catch (error) {
-      setErrors({ general: error.message || 'Failed to reset password. Please try again.' });
+      setLoading(true);
+      setError("");
+
+      await authService.resetPassword(
+        form.code,
+        form.new_password,
+        form.confirm_password
+      );
+
+      setSuccess(true);
+    } catch (err) {
+      setError(err.message);
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
-  const containerStyle = {
-    minHeight: '100vh',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#FCE7F3',
-    padding: '20px',
+  const handleResend = async () => {
+    try {
+      setResendLoading(true);
+      setError("");
+
+      await authService.resendResetCode();
+
+      alert("New code sent!");
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setResendLoading(false);
+    }
   };
 
-  const cardContainerStyle = {
-    backgroundColor: '#ffffff',
-    padding: '48px',
-    borderRadius: '16px',
-    boxShadow: '0 10px 40px rgba(219, 39, 119, 0.15)',
-    width: '100%',
-    maxWidth: '420px',
-    textAlign: 'center',
-  };
-
-  const logoContainerStyle = {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '12px',
-    marginBottom: '24px',
-  };
-
-  const logoImageStyle = {
-    width: '60px',
-    height: '60px',
-    objectFit: 'contain',
-  };
-
-  const logoTextStyle = {
-    fontSize: '28px',
-    fontWeight: '700',
-    color: '#831843',
-    letterSpacing: '-0.5px',
-  };
-
-  const logoSubtitleStyle = {
-    fontSize: '14px',
-    color: '#9D174D',
-    marginTop: '2px',
-  };
-
-  const iconStyle = {
-    width: '80px',
-    height: '80px',
-    borderRadius: '50%',
-    backgroundColor: '#FCE7F3',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    margin: '0 auto 24px',
-    fontSize: '36px',
-  };
-
-  const titleStyle = {
-    fontSize: '24px',
-    fontWeight: '700',
-    color: '#831843',
-    marginBottom: '12px',
-  };
-
-  const descriptionStyle = {
-    fontSize: '14px',
-    color: '#9D174D',
-    marginBottom: '32px',
-    lineHeight: '1.6',
-  };
-
-  const successStyle = {
-    backgroundColor: '#ECFDF5',
-    border: '1px solid #10B981',
-    borderRadius: '8px',
-    padding: '16px',
-    marginBottom: '24px',
-    color: '#065F46',
-    fontSize: '14px',
-  };
-
-  const successIconStyle = {
-    fontSize: '48px',
-    marginBottom: '16px',
-  };
-
-  const errorBannerStyle = {
-    backgroundColor: '#FCE7F2',
-    border: '1px solid #DB2777',
-    borderRadius: '8px',
-    padding: '12px',
-    marginBottom: '16px',
-    color: '#DB2777',
-    fontSize: '14px',
-    textAlign: 'center',
-  };
-
-  const footerStyle = {
-    marginTop: '24px',
-    fontSize: '14px',
-    color: '#9D174D',
-  };
-
-  const linkStyle = {
-    color: '#DB2777',
-    textDecoration: 'none',
-    fontWeight: '500',
-    cursor: 'pointer',
-  };
-
-  if (!token) {
+  if (success) {
     return (
-      <div style={containerStyle}>
-        <div style={cardContainerStyle}>
-          {/* Logo with Text - Center Left */}
-          <div style={logoContainerStyle}>
-            <img 
-              src={logo} 
-              alt="Rossy Resilience Logo" 
-              style={logoImageStyle}
-            />
-            <div>
-              <h1 style={logoTextStyle}>Rossy Resilience</h1>
-            </div>
-          </div>
-          <p style={logoSubtitleStyle}>Your Health, Our Priority</p>
-          
-          {/* Warning Icon */}
-          <div style={iconStyle}>⚠️</div>
-          
-          <h2 style={titleStyle}>Invalid Link</h2>
-          <p style={descriptionStyle}>
-            This password reset link is invalid or has expired.
-          </p>
-          
-          <Button
-            onClick={() => navigate('/forgot-password')}
-            variant="primary"
-            style={{ width: '100%' }}
-          >
-            Request New Reset Link
-          </Button>
-          
-          <div style={footerStyle}>
-            <p>
-              Remember your password?{' '}
-              <Link to="/login" style={linkStyle}>
-                Login
-              </Link>
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (isSuccess) {
-    return (
-      <div style={containerStyle}>
-        <div style={cardContainerStyle}>
-          {/* Logo with Text - Center Left */}
-          <div style={logoContainerStyle}>
-            <img 
-              src={logo} 
-              alt="Rossy Resilience Logo" 
-              style={logoImageStyle}
-            />
-            <div>
-              <h1 style={logoTextStyle}>Rossy Resilience</h1>
-            </div>
-          </div>
-          <p style={logoSubtitleStyle}>Your Health, Our Priority</p>
-          
-          {/* Success Icon */}
-          <div style={successIconStyle}>✅</div>
-          
-          <h2 style={titleStyle}>Password Reset</h2>
-          <p style={descriptionStyle}>
-            Your password has been successfully reset.
-          </p>
-          
-          <div style={successStyle}>
-            You can now login with your new password.
-          </div>
-          
-          <Button
-            onClick={() => navigate('/login')}
-            variant="primary"
-            style={{ width: '100%' }}
-          >
+      <div style={styles.container}>
+        <div style={styles.card}>
+          <h2>Password Reset Successful 🎉</h2>
+          <Button onClick={() => navigate("/login")}>
             Go to Login
           </Button>
         </div>
@@ -288,79 +82,100 @@ const ResetPassword = () => {
   }
 
   return (
-    <div style={containerStyle}>
-      <div style={cardContainerStyle}>
-        {/* Logo with Text - Center Left */}
-        <div style={logoContainerStyle}>
-          <img 
-            src={logo} 
-            alt="Rossy Resilience Logo" 
-            style={logoImageStyle}
-          />
-          <div>
-            <h1 style={logoTextStyle}>Rossy Resilience</h1>
-          </div>
-        </div>
-        <p style={logoSubtitleStyle}>Your Health, Our Priority</p>
-        
-        {/* Lock Icon */}
-        <div style={iconStyle}>🔒</div>
-        
-        <h2 style={titleStyle}>Set New Password</h2>
-        <p style={descriptionStyle}>
-          Create a strong password for your account
-        </p>
-        
-        {errors.general && (
-          <div style={errorBannerStyle}>{errors.general}</div>
-        )}
-        
-        <form onSubmit={handleSubmit}>
+    <div style={styles.container}>
+      <div style={styles.card}>
+        <h2 style={styles.title}>Reset Password</h2>
+
+        <form onSubmit={handleSubmit} style={styles.form}>
           <Input
-            label="New Password"
-            type="password"
-            name="password"
-            value={formData.password}
+            name="code"
+            placeholder="6-digit code"
+            value={form.code}
             onChange={handleChange}
-            placeholder="Create a new password"
-            error={errors.password}
-            required
-            autoComplete="new-password"
           />
-          
+
           <Input
-            label="Confirm New Password"
             type="password"
-            name="confirmPassword"
-            value={formData.confirmPassword}
+            name="new_password"
+            placeholder="New password"
+            value={form.new_password}
             onChange={handleChange}
-            placeholder="Confirm your new password"
-            error={errors.confirmPassword}
-            required
-            autoComplete="new-password"
           />
-          
-          <Button
-            type="submit"
-            variant="primary"
-            disabled={isLoading}
-            style={{ width: '100%', marginTop: '8px' }}
-          >
-            {isLoading ? 'Resetting...' : 'Reset Password'}
+
+          <Input
+            type="password"
+            name="confirm_password"
+            placeholder="Confirm password"
+            value={form.confirm_password}
+            onChange={handleChange}
+          />
+
+          {error && <p style={styles.error}>{error}</p>}
+
+          <Button type="submit" disabled={loading} style={styles.btn}>
+            {loading ? "Resetting..." : "Reset Password"}
           </Button>
         </form>
-        
-        <div style={footerStyle}>
-          <p>
-            Don't want to change password?{' '}
-            <Link to="/login" style={linkStyle}>
-              Cancel
-            </Link>
-          </p>
-        </div>
+
+        <Button
+          onClick={handleResend}
+          disabled={resendLoading}
+          variant="outline"
+          style={styles.resend}
+        >
+          {resendLoading ? "Sending..." : "Resend Code"}
+        </Button>
       </div>
     </div>
   );
 };
 
 export default ResetPassword;
+
+/* ================= styles ================= */
+
+const styles = {
+  container: {
+    minHeight: "100vh",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    backgroundColor: "#FCE7F3",
+    padding: "20px",
+  },
+
+  card: {
+    width: "100%",
+    maxWidth: "420px",
+    backgroundColor: "#fff",
+    padding: "30px",
+    borderRadius: "12px",
+    boxShadow: "0 10px 30px rgba(0,0,0,0.1)",
+    textAlign: "center",
+  },
+
+  title: {
+    marginBottom: "20px",
+    color: "#831843",
+  },
+
+  form: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+  },
+
+  btn: {
+    marginTop: "10px",
+  },
+
+  resend: {
+    marginTop: "15px",
+    width: "100%",
+  },
+
+  error: {
+    color: "red",
+    fontSize: "14px",
+  },
+};

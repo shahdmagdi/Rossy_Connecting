@@ -57,6 +57,8 @@ export const AuthProvider = ({ children }) => {
     }
     localStorage.removeItem('user');
     localStorage.removeItem('pendingUser');
+    localStorage.removeItem('mentalHealthAlert_interacted'); // ← أضف السطرين دول
+    localStorage.removeItem('mentalHealthMode');             // ← 
     setUser(null);
     setIsLoggedIn(false);
   };

@@ -1,181 +1,409 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import './Doctor.css';
+import authService from '../../services/authService';
 
 const Doctor = () => {
-  // ============================================================================
-  // STATE MANAGEMENT
-  // ============================================================================
-  
-  // View state: 'no-doctor' or 'selection'
-  const [viewState, setViewState] = useState('no-doctor');
-  
-  // Selected doctor state
+  const [viewState, setViewState] = useState('loading');
+  const [assignedDoctor, setAssignedDoctor] = useState(null);
+  const [assignmentId, setAssignmentId] = useState(null);
   const [selectedDoctor, setSelectedDoctor] = useState(null);
+  const [doctors, setDoctors] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [removeLoading, setRemoveLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  // ============================================================================
-  // DEMO DATA - Replace with Flask API later
-  // ============================================================================
-  // To integrate with Flask backend later, replace this array with:
-  //   const [doctors, setDoctors] = useState([]);
-  //   useEffect(() => { fetch('/api/doctors').then(res => res.json()).then(data => setDoctors(data)); }, []);
-  
-  const DEMO_DOCTORS = [
-    {
-      id: 1,
-      name: 'Dr Asser',
-      specialization: 'Breast Oncology & Surgical Oncology',
-      hospital: 'City Medical Center',
-      experience: '15 years',
-      image: '👨‍⚕️'
-    },
-    {
-      id: 2,
-      name: 'Dr Sara',
-      specialization: 'Medical Oncology (Breast Cancer)',
-      hospital: 'Nile Medical Hospital',
-      experience: '9 years',
-      image: '👩‍⚕️'
-    },
-    {
-      id: 3,
-      name: 'Dr Layla',
-      specialization: 'Radiology & Breast Imaging',
-      hospital: 'Al-Shifa Diagnostic Center',
-      experience: '10 years',
-      image: '👩‍⚕️'
-    },
-    {
-      id: 4,
-      name: 'Dr Ali',
-      specialization: 'Radiation Oncology',
-      hospital: 'Alexandria Cancer Institute',
-      experience: '20 years',
-      image: '👨‍⚕️'
-    }
-  ];
+  useEffect(() => {
+    const init = async () => {
+      try {
+        const [myDoctorRes, requestsRes, doctorsRes] = await Promise.all([
+          authService.getMyDoctor(),
+          authService.getPatientRequests(),
+          authService.getDoctors(),
+        ]);
 
-  // ============================================================================
-  // EVENT HANDLERS
-  // ============================================================================
+        setDoctors(doctorsRes.data?.doctors || []);
 
-  // Handle "Assign a doctor" button click - switch to selection view
-  const handleStartAssignment = () => {
+        const requests = requestsRes.requests || [];
+        const approved = requests.find(r => r.status === 'approved');
+        const pending = requests.find(r => r.status === 'pending');
+
+        if (myDoctorRes.success && myDoctorRes.doctor) {
+          setAssignedDoctor(myDoctorRes.doctor);
+          if (approved) setAssignmentId(approved.assignment_id);
+          setViewState('approved');
+        } else if (pending) {
+          setAssignedDoctor(pending.doctor);
+          setAssignmentId(pending.assignment_id);
+          setViewState('pending');
+        } else {
+          setViewState('no-doctor');
+        }
+      } catch (err) {
+        console.error(err);
+        setViewState('no-doctor');
+      }
+    };
+    init();
+  }, []);
+
+  const handleStartAssignment = async () => {
     setViewState('selection');
-    // Set first doctor as default selection
-    setSelectedDoctor(DEMO_DOCTORS[0]);
-  };
-
-  // Handle doctor card selection
-  const handleSelectDoctor = (doctor) => {
-    setSelectedDoctor(doctor);
-  };
-
-  // Handle final "Assign a doctor" button
-  const handleConfirmAssignment = () => {
-    if (selectedDoctor) {
-      // TODO: Replace with Flask API call later
-      // Example: await fetch('/api/assign-doctor', { method: 'POST', body: JSON.stringify({ doctorId: selectedDoctor.id }) });
-      
-      // Demo behavior - show alert
-      alert(`Doctor assigned successfully!\n\nYou have been assigned to ${selectedDoctor.name}.\n\n(This is demo behavior - connect to Flask backend later to save to database)`);
-      
-      console.log('Selected Doctor:', selectedDoctor);
+    if (doctors.length === 0) {
+      try {
+        const doctorsRes = await authService.getDoctors();
+        setDoctors(doctorsRes.data?.doctors || []);
+      } catch (err) {
+        console.error(err);
+      }
     }
   };
 
-  // ============================================================================
-  // RENDER: STATE 1 - No Doctor Assigned
-  // ============================================================================
+  const handleSelectDoctor = (doctor) => setSelectedDoctor(doctor);
+
+  const handleConfirmAssignment = async () => {
+    if (!selectedDoctor) return;
+    setLoading(true);
+    setError('');
+    try {
+      await authService.requestDoctor(selectedDoctor.doctor_id);
+      setAssignedDoctor(selectedDoctor);
+      setViewState('pending');
+    } catch (err) {
+      setError(err.response?.data?.message || 'Something went wrong.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCancelRequest = async () => {
+    if (!assignmentId) return;
+    setRemoveLoading(true);
+    setError('');
+    try {
+      await authService.cancelPatientRequest(assignmentId);
+      setAssignedDoctor(null);
+      setAssignmentId(null);
+      setViewState('no-doctor');
+    } catch (err) {
+      setError(err.message || 'Failed to cancel request.');
+    } finally {
+      setRemoveLoading(false);
+    }
+  };
+
+  const handleRemoveDoctor = async () => {
+    setRemoveLoading(true);
+    setError('');
+    try {
+      await authService.removeMyDoctor();
+      setAssignedDoctor(null);
+      setAssignmentId(null);
+      setViewState('no-doctor');
+    } catch (err) {
+      setError(err.message || 'Failed to remove doctor.');
+    } finally {
+      setRemoveLoading(false);
+    }
+  };
+
+  // ───────── LOADING ─────────
+  const renderLoading = () => (
+    <div style={s.centered}>
+      <div style={{ color: '#DB2777', fontSize: '15px' }}>Loading…</div>
+    </div>
+  );
+
+  // ───────── NO DOCTOR ─────────
   const renderNoDoctorState = () => (
     <div className="doctor-no-doctor-container">
-      {/* Preference Card */}
-      <div className="doctor-preference-card">
-        <h2 className="doctor-preference-title">Doctor Assignment Preference</h2>
-        <p className="doctor-preference-subtitle">
-          Choose whether you want to be assigned to a specific doctor
-        </p>
-        
-        {/* Horizontal Option Bar */}
-        <div className="doctor-option-bar">
-          <span className="doctor-option-text">
-            Assign me to a doctor you can choose different doctors or consult the AI
-          </span>
-          <label className="doctor-toggle">
-            <input type="checkbox" defaultChecked />
-            <span className="doctor-toggle-slider"></span>
-          </label>
-        </div>
-      </div>
-
-      {/* Empty State Card */}
       <div className="doctor-empty-card">
         <div className="doctor-empty-icon">🏥</div>
         <h3 className="doctor-empty-heading">No Doctor Assigned</h3>
         <p className="doctor-empty-text">
-          Enable doctor assignment to get matched with a dedicated healthcare provider 
-          who will manage your care or consult the AI.
+          Enable doctor assignment to get matched with a healthcare provider
         </p>
-        <button 
-          className="doctor-assign-btn"
-          onClick={handleStartAssignment}
-        >
+        <button className="doctor-assign-btn" onClick={handleStartAssignment}>
           Assign a doctor
         </button>
       </div>
     </div>
   );
 
-  // ============================================================================
-  // RENDER: STATE 2 - Doctor Selection View
-  // ============================================================================
-  const renderSelectionState = () => (
-    <div className="doctor-selection-container">
-      <div className="doctor-selection-wrapper">
-        {/* Doctor Cards Grid */}
-        <div className="doctor-grid">
-          {DEMO_DOCTORS.map((doctor) => (
-            <div 
-              key={doctor.id}
-              className={`doctor-card ${selectedDoctor?.id === doctor.id ? 'doctor-card-selected' : ''}`}
-              onClick={() => handleSelectDoctor(doctor)}
-            >
-              <div className="doctor-card-image">{doctor.image}</div>
-              <div className="doctor-card-name">{doctor.name}</div>
-              <div className="doctor-card-specialization">{doctor.specialization}</div>
-              <div className="doctor-card-hospital">{doctor.hospital}</div>
-              <div className="doctor-card-experience">{doctor.experience}</div>
-            </div>
-          ))}
-        </div>
+  // ───────── PENDING ─────────
+  const renderPendingState = () => (
+    <div style={s.centerWrap}>
+      <div style={s.card}>
+        <div style={s.pendingIconWrap}>⏳</div>
 
-        {/* Confirm Button */}
-        <div className="doctor-confirm-container">
-          <button 
-            className="doctor-confirm-btn"
-            onClick={handleConfirmAssignment}
-          >
-            Assign a doctor
-          </button>
-        </div>
+        <h3 style={s.cardTitle}>Request Pending</h3>
+        <p style={s.cardSubtitle}>
+          Waiting for doctor approval...
+        </p>
+
+        {assignedDoctor && (
+          <div style={s.doctorPreview}>
+            <div style={s.doctorAvatar}>👨‍⚕️</div>
+            <div>
+              <div style={s.doctorName}>{assignedDoctor.full_name}</div>
+              <div style={s.doctorMeta}>
+                {assignedDoctor.specialization}
+              </div>
+            </div>
+          </div>
+        )}
+
+        
       </div>
     </div>
   );
 
-  // ============================================================================
-  // MAIN RENDER
-  // ============================================================================
-  return (
-    <div className="doctor-page">
-      {/* Page Header */}
-      <div className="doctor-header">
-        <a href="/patient/dashboard" className="doctor-back-link">← Back</a>
-        <h1 className="doctor-page-title">My Doctor</h1>
-      </div>
+  // ───────── APPROVED ─────────
+  const renderApprovedState = () => (
+    <div style={s.centerWrap}>
+      <div style={s.card}>
 
-      {/* Content - Conditional Rendering */}
-      {viewState === 'no-doctor' ? renderNoDoctorState() : renderSelectionState()}
+        <div style={s.approvedBadge}>✓ Assigned Doctor</div>
+
+        <div style={s.avatarWrap}>
+          <span style={{ fontSize: '52px' }}>👨‍⚕️</span>
+        </div>
+
+        <h2 style={s.approvedName}>{assignedDoctor?.full_name}</h2>
+        <p style={s.approvedSpec}>{assignedDoctor?.specialization}</p>
+
+        <div style={s.contactRow}>
+
+          <a
+            href={`mailto:${assignedDoctor?.email || ''}`}
+            style={s.emailBtn}
+          >
+            Email
+          </a>
+
+          <a
+            href={
+              assignedDoctor?.whatsapp_link ||
+              `https://wa.me/${assignedDoctor?.phone_number || ''}`
+            }
+            target="_blank"
+            rel="noreferrer"
+            style={s.whatsappBtn}
+          >
+            WhatsApp
+          </a>
+
+        </div>
+
+        <button style={s.removeBtn} onClick={handleRemoveDoctor}>
+          {removeLoading ? 'Removing…' : 'Remove Doctor'}
+        </button>
+      </div>
+    </div>
+  );
+
+  // ───────── SELECTION ─────────
+  const renderSelectionState = () => (
+    <div style={s.centerWrap}>
+      <div style={s.card}>
+
+        <h3 style={s.cardTitle}>Select Doctor</h3>
+
+        <div style={s.grid}>
+          {doctors.map((doctor) => (
+            <div
+              key={doctor.doctor_id}
+              style={{
+                ...s.doctorCard,
+                ...(selectedDoctor?.doctor_id === doctor.doctor_id
+                  ? s.selectedCard
+                  : {})
+              }}
+              onClick={() => handleSelectDoctor(doctor)}
+            >
+              <div style={{ fontSize: '28px' }}>👨‍⚕️</div>
+              <div style={{ fontWeight: '600' }}>{doctor.full_name}</div>
+              <div style={{ fontSize: '12px', color: '#666' }}>
+                {doctor.specialization}
+              </div>
+            </div>
+          ))}
+        </div>
+
+        <button
+          style={s.confirmBtn}
+          onClick={handleConfirmAssignment}
+          disabled={loading || !selectedDoctor}
+        >
+          {loading ? 'Sending…' : 'Assign Doctor'}
+        </button>
+      </div>
+    </div>
+  );
+
+  return (
+    <div>
+      {viewState === 'loading' && renderLoading()}
+      {viewState === 'no-doctor' && renderNoDoctorState()}
+      {viewState === 'pending' && renderPendingState()}
+      {viewState === 'approved' && renderApprovedState()}
+      {viewState === 'selection' && renderSelectionState()}
     </div>
   );
 };
 
 export default Doctor;
+
+// ───────── STYLES ONLY ─────────
+const s = {
+  centered: {
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '60px 20px',
+  },
+
+  centerWrap: {
+    display: 'flex',
+    justifyContent: 'center',
+    padding: '40px 20px',
+  },
+
+  card: {
+    backgroundColor: '#fff',
+    borderRadius: '18px',
+    boxShadow: '0 8px 30px rgba(0,0,0,0.08)',
+    padding: '30px',
+    width: '100%',
+    maxWidth: '420px',
+    textAlign: 'center',
+  },
+
+  pendingIconWrap: {
+    fontSize: '32px',
+    marginBottom: '10px',
+  },
+
+  cardTitle: {
+    fontSize: '18px',
+    fontWeight: '700',
+    marginBottom: '8px',
+  },
+
+  cardSubtitle: {
+    fontSize: '13px',
+    color: '#666',
+    marginBottom: '20px',
+  },
+
+  doctorPreview: {
+    display: 'flex',
+    gap: '10px',
+    alignItems: 'center',
+    marginBottom: '20px',
+    justifyContent: 'center',
+  },
+
+  doctorAvatar: { fontSize: '28px' },
+
+  doctorName: { fontWeight: '600' },
+
+  doctorMeta: { fontSize: '12px', color: '#777' },
+
+  cancelBtn: {
+    backgroundColor: '#ffe4e6',
+    color: '#be123c',
+    padding: '10px',
+    border: 'none',
+    borderRadius: '10px',
+    width: '100%',
+    cursor: 'pointer',
+  },
+
+  approvedBadge: {
+    backgroundColor: '#dcfce7',
+    padding: '5px 12px',
+    borderRadius: '20px',
+    fontSize: '12px',
+    marginBottom: '10px',
+    display: 'inline-block',
+  },
+
+  avatarWrap: {
+    margin: '10px auto',
+  },
+
+  approvedName: {
+    fontSize: '20px',
+    fontWeight: '700',
+  },
+
+  approvedSpec: {
+    fontSize: '13px',
+    color: '#666',
+    marginBottom: '15px',
+  },
+
+  contactRow: {
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center',
+    marginBottom: '15px',
+  },
+
+  emailBtn: {
+    backgroundColor: '#831843',
+    color: '#fff',
+    padding: '10px 15px',
+    borderRadius: '10px',
+    textDecoration: 'none',
+    fontSize: '13px',
+  },
+
+  whatsappBtn: {
+    backgroundColor: '#16a34a',
+    color: '#fff',
+    padding: '10px 15px',
+    borderRadius: '10px',
+    textDecoration: 'none',
+    fontSize: '13px',
+  },
+
+  removeBtn: {
+    backgroundColor: '#fee2e2',
+    color: '#b91c1c',
+    padding: '10px',
+    borderRadius: '10px',
+    border: 'none',
+    width: '100%',
+    cursor: 'pointer',
+  },
+
+  grid: {
+    display: 'grid',
+    gridTemplateColumns: '1fr 1fr',
+    gap: '10px',
+    margin: '20px 0',
+  },
+
+  doctorCard: {
+    padding: '10px',
+    borderRadius: '10px',
+    border: '1px solid #eee',
+    cursor: 'pointer',
+  },
+
+  selectedCard: {
+    border: '2px solid #831843',
+    backgroundColor: '#faf5ff',
+  },
+
+  confirmBtn: {
+    width: '100%',
+    padding: '10px',
+    borderRadius: '10px',
+    backgroundColor: '#831843',
+    color: '#fff',
+    border: 'none',
+    cursor: 'pointer',
+  },
+};

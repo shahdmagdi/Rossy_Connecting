@@ -1,0 +1,385 @@
+/* ═══════════════════════════════════════════════════
+   PatientRequests.css
+   Doctor → Patient Assignment Requests UI
+═══════════════════════════════════════════════════ */
+
+/* ── Tokens ──────────────────────────────────────── */
+:root {
+  --pr-bg:           #f4f6fb;
+  --pr-surface:      #ffffff;
+  --pr-border:       #e4e8f0;
+  --pr-text:         #1a1f36;
+  --pr-muted:        #6b7394;
+  --pr-accent:       #3b6ef8;
+  --pr-accent-light: #eef2ff;
+  --pr-accept:       #16a34a;
+  --pr-accept-bg:    #f0fdf4;
+  --pr-accept-hover: #15803d;
+  --pr-reject:       #dc2626;
+  --pr-reject-bg:    #fef2f2;
+  --pr-reject-hover: #b91c1c;
+  --pr-radius:       14px;
+  --pr-shadow:       0 2px 12px rgba(30, 40, 90, 0.07);
+  --pr-shadow-hover: 0 6px 24px rgba(30, 40, 90, 0.13);
+}
+
+/* ── Page wrapper ────────────────────────────────── */
+.pr-page {
+  min-height: 100vh;
+  background: var(--pr-bg);
+  padding: 2.5rem 2rem;
+  max-width: 860px;
+  margin: 0 auto;
+  position: relative;
+  font-family: 'Segoe UI', 'Inter', system-ui, sans-serif;
+}
+
+/* ── Header ──────────────────────────────────────── */
+.pr-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 2rem;
+  gap: 1rem;
+}
+
+.pr-header__title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  color: var(--pr-text);
+  margin: 0 0 0.25rem;
+  letter-spacing: -0.02em;
+}
+
+.pr-header__sub {
+  color: var(--pr-muted);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.pr-header__badge {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  background: var(--pr-accent-light);
+  color: var(--pr-accent);
+  font-weight: 600;
+  font-size: 0.875rem;
+  padding: 0.45rem 1rem;
+  border-radius: 999px;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 0.25rem;
+}
+
+/* ── Card list ───────────────────────────────────── */
+.pr-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* ── Card ────────────────────────────────────────── */
+.pr-card {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  box-shadow: var(--pr-shadow);
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  padding: 1.25rem 1.5rem;
+  transition: box-shadow 0.2s, transform 0.2s;
+  animation: pr-slideIn 0.3s ease both;
+  animation-delay: var(--delay, 0s);
+}
+
+@keyframes pr-slideIn {
+  from { opacity: 0; transform: translateY(12px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.pr-card:hover {
+  box-shadow: var(--pr-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* ── Avatar ──────────────────────────────────────── */
+.pr-card__avatar {
+  width: 52px;
+  height: 52px;
+  min-width: 52px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c7d7fc 0%, #a5b8fb 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1rem;
+  color: var(--pr-accent);
+  letter-spacing: 0.02em;
+}
+
+/* ── Card body ───────────────────────────────────── */
+.pr-card__body {
+  flex: 1;
+  min-width: 0;
+}
+
+.pr-card__name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--pr-text);
+  margin: 0 0 0.35rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.pr-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.6rem 1.1rem;
+  margin-bottom: 0.45rem;
+}
+
+.pr-card__meta-item {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--pr-muted);
+  font-size: 0.82rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+
+.pr-card__badge {
+  background: #f0f4ff;
+  color: var(--pr-accent);
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.2rem 0.65rem;
+  border-radius: 999px;
+  text-transform: capitalize;
+}
+
+.pr-card__date {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: #9ba3bb;
+  font-size: 0.78rem;
+}
+
+/* ── Card actions ────────────────────────────────── */
+.pr-card__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  min-width: 100px;
+}
+
+/* ── Buttons ─────────────────────────────────────── */
+.pr-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  border: none;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.55rem 1rem;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s, opacity 0.15s;
+}
+
+.pr-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.pr-btn--accept {
+  background: var(--pr-accept-bg);
+  color: var(--pr-accept);
+  border: 1px solid #bbf7d0;
+}
+.pr-btn--accept:hover:not(:disabled) {
+  background: var(--pr-accept);
+  color: #fff;
+  border-color: var(--pr-accept);
+  transform: scale(1.02);
+}
+
+.pr-btn--reject {
+  background: var(--pr-reject-bg);
+  color: var(--pr-reject);
+  border: 1px solid #fecaca;
+}
+.pr-btn--reject:hover:not(:disabled) {
+  background: var(--pr-reject);
+  color: #fff;
+  border-color: var(--pr-reject);
+  transform: scale(1.02);
+}
+
+.pr-btn--retry {
+  background: var(--pr-accent);
+  color: #fff;
+  border-radius: 8px;
+  border: none;
+  padding: 0.6rem 1.4rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: 0.75rem;
+}
+.pr-btn--retry:hover {
+  background: #2c5ce0;
+}
+
+/* ── Spinner ─────────────────────────────────────── */
+.pr-spinner {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: pr-spin 0.6s linear infinite;
+}
+
+@keyframes pr-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ── Skeleton loading ────────────────────────────── */
+.pr-skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pr-skeleton-card {
+  background: var(--pr-surface);
+  border: 1px solid var(--pr-border);
+  border-radius: var(--pr-radius);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+}
+
+.pr-skeleton-lines {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.pr-skeleton {
+  background: linear-gradient(90deg, #eef0f6 25%, #e2e5ee 50%, #eef0f6 75%);
+  background-size: 200% 100%;
+  animation: pr-shimmer 1.4s infinite;
+  border-radius: 6px;
+}
+
+@keyframes pr-shimmer {
+  from { background-position: 200% 0; }
+  to   { background-position: -200% 0; }
+}
+
+.pr-skeleton--avatar { width: 52px; height: 52px; min-width: 52px; border-radius: 50%; }
+.pr-skeleton--line   { height: 14px; }
+.pr-skeleton--lg     { width: 55%; }
+.pr-skeleton--md     { width: 75%; }
+.pr-skeleton--sm     { width: 40%; }
+
+/* ── Empty state ─────────────────────────────────── */
+.pr-empty {
+  text-align: center;
+  padding: 4.5rem 2rem;
+  color: var(--pr-muted);
+}
+
+.pr-empty svg {
+  margin-bottom: 1rem;
+  opacity: 0.35;
+}
+
+.pr-empty h3 {
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--pr-text);
+  margin: 0 0 0.4rem;
+}
+
+.pr-empty p {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+/* ── Error state ─────────────────────────────────── */
+.pr-error {
+  text-align: center;
+  padding: 3rem 2rem;
+  color: var(--pr-reject);
+  background: var(--pr-reject-bg);
+  border: 1px solid #fecaca;
+  border-radius: var(--pr-radius);
+}
+
+/* ── Toast ───────────────────────────────────────── */
+.pr-toast {
+  position: fixed;
+  top: 1.5rem;
+  right: 1.5rem;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.25rem;
+  border-radius: 10px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.12);
+  animation: pr-toastIn 0.25s ease, pr-toastOut 0.3s ease 2.7s forwards;
+  max-width: 340px;
+}
+
+@keyframes pr-toastIn {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0) scale(1); }
+}
+@keyframes pr-toastOut {
+  to { opacity: 0; transform: translateY(-6px) scale(0.97); }
+}
+
+.pr-toast--success { background: #fff; color: var(--pr-accept); border: 1px solid #bbf7d0; }
+.pr-toast--error   { background: #fff; color: var(--pr-reject); border: 1px solid #fecaca; }
+
+/* ── Responsive ──────────────────────────────────── */
+@media (max-width: 620px) {
+  .pr-page { padding: 1.5rem 1rem; }
+
+  .pr-card {
+    flex-wrap: wrap;
+    gap: 1rem;
+    padding: 1rem 1.1rem;
+  }
+
+  .pr-card__actions {
+    flex-direction: row;
+    width: 100%;
+    min-width: unset;
+  }
+
+  .pr-btn {
+    flex: 1;
+  }
+
+  .pr-header { flex-direction: column; align-items: flex-start; }
+}

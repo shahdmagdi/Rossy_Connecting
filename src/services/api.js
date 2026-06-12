@@ -5,15 +5,24 @@ const api = axios.create({
   timeout: 10000,
   withCredentials: true,
   headers: {
-    'Content-Type': 'application/json',
     'Accept': 'application/json',
   }
 });
 
-// Request interceptor — logs what's being sent
+// Request interceptor
 api.interceptors.request.use((config) => {
+  // Only set Content-Type to JSON for body requests that are NOT FormData.
+  // When data is FormData, axios sets the correct multipart/form-data boundary
+  // automatically — overwriting it here would break file uploads.
+  if (
+    ['post', 'put', 'patch'].includes(config.method?.toLowerCase()) &&
+    !(config.data instanceof FormData)
+  ) {
+    config.headers['Content-Type'] = 'application/json';
+  }
+
   console.log('[API Request]', config.method.toUpperCase(), config.url);
-  console.log('[API Body]', config.data);   // ← shows exactly what's sent
+  console.log('[API Body]', config.data);
   return config;
 });
 
